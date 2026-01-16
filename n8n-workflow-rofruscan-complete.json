@@ -1,0 +1,265 @@
+{
+  "name": "RoFruScan - Fotos in Nextcloud + Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "31b29f07-a278-47ed-bf7d-e6ec21925940",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-688, -32],
+      "id": "d70c1472-21aa-4533-be51-1fe7705f5864",
+      "name": "Webhook",
+      "webhookId": "31b29f07-a278-47ed-bf7d-e6ec21925940"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "folder",
+        "path": "=/mO-Server-Pro/RoFruScan/WareneingangFotos/{{ $json.body.positionCode }} - {{ $json.body.uploadedAt }}"
+      },
+      "type": "n8n-nodes-base.nextCloud",
+      "typeVersion": 1,
+      "position": [-464, -176],
+      "id": "a431f90b-9991-4250-9069-e440cc7faadf",
+      "name": "NextCloud-Ordner erstellen",
+      "alwaysOutputData": false,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wir holen das GANZE Array (alle Fotos)\nconst photos = $('Webhook').first().json.body.photos;\nconst positionCode = $('Webhook').first().json.body.positionCode;\nconst deviceName = $('Webhook').first().json.body.deviceName || 'Unknown';\n\n// .map() geht jetzt automatisch durch jedes Bild einzeln durch\nreturn photos.map(photo => {\n  // Generiere UUID für eindeutigen Dateinamen\n  const uuid = crypto.randomUUID();\n  const fileName = `${uuid}_${positionCode}.jpg`;\n  \n  return {\n    json: {\n      fileName: fileName,\n      originalFileName: photo.fileName,\n      positionCode: positionCode,\n      capturedAt: photo.capturedAt,\n      deviceName: deviceName,\n      uuid: uuid\n    },\n    binary: {\n      data: {\n        data: photo.imageBase64,\n        mimeType: 'image/jpeg',\n        fileExtension: 'jpg',\n        fileName: fileName\n      }\n    }\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-256, -32],
+      "id": "b722ccb4-c0d3-4e42-86d4-fcb30e954d29",
+      "name": "Code - Prepare Photos"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "path": "=/mO-Server-Pro/RoFruScan/WareneingangFotos/{{ $('Webhook').item.json.body.positionCode }} - {{ $('Webhook').item.json.body.uploadedAt }}/{{ $json.originalFileName }}",
+        "binaryDataUpload": true
+      },
+      "type": "n8n-nodes-base.nextCloud",
+      "typeVersion": 1,
+      "position": [48, -176],
+      "id": "c34c3e35-bea5-422d-bc14-1c17db985a0a",
+      "name": "Upload to Nextcloud",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://eocngtxcbdzuxjsjcsss.supabase.co/storage/v1/object/incoming-images/{{ $json.fileName }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $credentials.apiKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [48, 112],
+      "id": "supabase-storage-upload",
+      "name": "Supabase Storage Upload",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase Auth"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "incoming_goods_Fotos",
+        "fieldsToSend": "defineBelow",
+        "fieldValues": {
+          "values": [
+            {
+              "fieldName": "position_code",
+              "fieldValue": "={{ $('Code - Prepare Photos').item.json.positionCode }}"
+            },
+            {
+              "fieldName": "image_url",
+              "fieldValue": "=https://eocngtxcbdzuxjsjcsss.supabase.co/storage/v1/object/public/incoming-images/{{ $('Code - Prepare Photos').item.json.fileName }}"
+            },
+            {
+              "fieldName": "captured_at",
+              "fieldValue": "={{ $('Code - Prepare Photos').item.json.capturedAt }}"
+            },
+            {
+              "fieldName": "user_device",
+              "fieldValue": "={{ $('Code - Prepare Photos').item.json.deviceName }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [288, 112],
+      "id": "supabase-db-insert",
+      "name": "Supabase DB Insert",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase API"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "toRecipients": "wareneingang@rodifructus.ch",
+        "subject": "=Wareneingang zu {{ $('Webhook').first().json.body.positionCode }} - {{ $('Webhook').first().json.body.photos.length }} Foto(s)",
+        "bodyContent": "=Hey 😊<br>\n<br>\nEs wurden neue Fotos zu den Wareneingängen hochgeladen.<br>\nPosition Code: <b>{{ $('Webhook').first().json.body.positionCode }}</b><br>\nAnzahl: <b>{{ $('Webhook').first().json.body.photos.length }}</b>\n<br>\n<br>\nDiese kannst du dir hier anschauen:<br>\n📁 <a href=\"https://mobileobjects.mo-nextcloud.ch/index.php/apps/files/files/47848?dir=/mO-Server-Pro/RoFruScan/WareneingangFotos\">Nextcloud</a><br>\n🌐 <a href=\"https://rofruweb.vercel.app/position/{{ $('Webhook').first().json.body.positionCode }}\">RoFruWeb</a>",
+        "additionalFields": {
+          "bccRecipients": "darnoldi@mobileobjects.ch",
+          "from": "RoFruScan-App",
+          "bodyContentType": "html"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [528, -32],
+      "id": "df6aa441-b19c-4318-8418-af68640c0cfd",
+      "name": "Send Email",
+      "webhookId": "dedb3578-e5df-4a82-aa38-e448ff2f436e",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [336, -32],
+      "id": "merge-branches",
+      "name": "Wait for Both Uploads"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "NextCloud-Ordner erstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NextCloud-Ordner erstellen": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Photos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Photos": {
+      "main": [
+        [
+          {
+            "node": "Upload to Nextcloud",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Supabase Storage Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Nextcloud": {
+      "main": [
+        [
+          {
+            "node": "Wait for Both Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Storage Upload": {
+      "main": [
+        [
+          {
+            "node": "Supabase DB Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase DB Insert": {
+      "main": [
+        [
+          {
+            "node": "Wait for Both Uploads",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait for Both Uploads": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true,
+    "errorWorkflow": "MbquP66Xpe43dezu"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}

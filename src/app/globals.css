@@ -1,26 +1,293 @@
 @import "tailwindcss";
 
+/* ============================================
+   Liquid Glass Design System - RoFruWeb
+   Elegant, neutral palette inspired by iOS 26
+   Ported from RoFruScan Android App
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Accent - Corporate Blue */
+  --primary-blue: #1684C1;
+  --primary-blue-light: #4DA3D4;
+  --primary-blue-dark: #0E5A85;
+  --primary-blue-subtle: #E3F2FA;
+
+  /* Secondary - Warm Champagne */
+  --champagne: #D4C4B0;
+  --champagne-light: #EDE5DB;
+  --champagne-dark: #A69782;
+
+  /* Neutral Palette - Light Mode */
+  --pure-white: #FFFFFF;
+  --off-white: #FAF9F7;
+  --warm-gray-50: #F7F5F3;
+  --warm-gray-100: #EDEBE8;
+  --warm-gray-200: #E0DEDA;
+  --warm-gray-300: #C9C5C0;
+  --warm-gray-400: #A8A29D;
+  --warm-gray-500: #78716C;
+  --warm-gray-600: #57534E;
+  --warm-gray-700: #44403C;
+  --warm-gray-800: #292524;
+  --warm-gray-900: #1C1917;
+
+  /* Semantic Colors */
+  --success-green: #34A853;
+  --success-green-light: #E6F4EA;
+  --error-red: #DC3545;
+  --error-red-light: #FCE8E8;
+  --warning-amber: #F59E0B;
+  --warning-amber-light: #FFF7E6;
+
+  /* Glass Effect Colors */
+  --glass-white: rgba(255, 255, 255, 0.6);
+  --glass-white-subtle: rgba(255, 255, 255, 0.3);
+  --glass-border-light: rgba(255, 255, 255, 0.2);
+
+  /* Light Mode Theme Variables */
+  --background: var(--off-white);
+  --foreground: var(--warm-gray-900);
+  --surface: var(--pure-white);
+  --surface-variant: var(--warm-gray-100);
+  --on-surface: var(--warm-gray-900);
+  --on-surface-variant: var(--warm-gray-600);
+  --outline: var(--warm-gray-300);
+  --outline-variant: var(--warm-gray-200);
+  --primary: var(--primary-blue);
+  --on-primary: var(--pure-white);
+  --primary-container: var(--primary-blue-subtle);
+  --secondary: var(--champagne-dark);
+  --secondary-container: var(--champagne-light);
+  --scrim: rgba(0, 0, 0, 0.32);
+  --inverse-surface: var(--warm-gray-800);
+  --inverse-on-surface: var(--warm-gray-100);
+}
+
+.dark {
+  /* Neutral Palette - Dark Mode */
+  --charcoal: #121214;
+  --charcoal-light: #1A1A1D;
+  --charcoal-surface: #222225;
+  --charcoal-elevated: #2E2E31;
+  --charcoal-border: #3E3E41;
+
+  /* Glass Effect Colors - Dark */
+  --glass-dark: rgba(0, 0, 0, 0.6);
+  --glass-dark-subtle: rgba(0, 0, 0, 0.3);
+  --glass-border-dark: rgba(255, 255, 255, 0.2);
+
+  /* Dark Mode Theme Variables */
+  --background: var(--charcoal);
+  --foreground: #FAFAFA;
+  --surface: var(--charcoal-light);
+  --surface-variant: var(--charcoal-surface);
+  --on-surface: #FAFAFA;
+  --on-surface-variant: var(--warm-gray-400);
+  --outline: var(--charcoal-border);
+  --outline-variant: var(--charcoal-elevated);
+  --primary: var(--primary-blue-light);
+  --on-primary: var(--warm-gray-900);
+  --primary-container: var(--primary-blue-dark);
+  --secondary: var(--champagne);
+  --secondary-container: var(--champagne-dark);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --inverse-surface: var(--warm-gray-100);
+  --inverse-on-surface: var(--warm-gray-800);
+  --glass-border-light: var(--glass-border-dark);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-variant: var(--surface-variant);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-primary-blue: var(--primary-blue);
+  --color-primary-blue-light: var(--primary-blue-light);
+  --color-primary-blue-dark: var(--primary-blue-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-success: var(--success-green);
+  --color-success-light: var(--success-green-light);
+  --color-error: var(--error-red);
+  --color-error-light: var(--error-red-light);
+  --color-warning: var(--warning-amber);
+  --color-warning-light: var(--warning-amber-light);
+  --color-scrim: var(--scrim);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-glass-border: var(--glass-border-light);
+  --color-champagne: var(--champagne);
+  --color-champagne-light: var(--champagne-light);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-variant);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--outline);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--on-surface-variant);
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--glass-border-light);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.dark .glass-card {
+  border-color: var(--glass-border-dark);
+}
+
+/* Button Base Styles */
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Input Styling */
+.input-field {
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 12px 16px;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Sanftes Hüpfen für Früchte-Charaktere */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* Header Gradient - Corporate Blue */
+.header-gradient {
+  background: linear-gradient(135deg, #1A4B7C 0%, #0E3A5C 50%, #0A2840 100%);
+  box-shadow: 0 2px 8px rgba(10, 40, 64, 0.3);
+}
+
+.dark .header-gradient {
+  background: linear-gradient(135deg, #0E3A5C 0%, #0A2840 50%, #061620 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
