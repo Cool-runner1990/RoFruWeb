@@ -183,7 +183,7 @@ Die App läuft jetzt auf **[http://localhost:3000](http://localhost:3000)** 🎉
 ## 📁 Projektstruktur
 
 ```
-rofruweb/
+RoFruWeb/
 ├── 📂 src/
 │   ├── 📂 app/                        # Next.js App Router
 │   │   ├── 📂 (auth)/                 # Auth-Seiten
@@ -379,6 +379,6 @@ Dieses Projekt ist proprietär und für den internen Gebrauch bei Rodifructus be
 
 **Made with ❤️ for Rodifructus**
 
-[⬆ Zurück nach oben](#-rofruweb)
+[⬆ Zurück nach oben](#-RoFruWeb)
 
 </div>
