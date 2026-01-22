@@ -80,7 +80,7 @@ Die RoFruWeb Webapp ist **vollständig implementiert** und bereit für den Produ
 ## 📁 Projekt-Struktur
 
 ```
-rofruweb/
+RoFruWeb/
 ├── src/
 │   ├── app/                          # Next.js App Router
 │   │   ├── (auth)/                   # Auth-Layout-Gruppe

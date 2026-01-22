@@ -1,0 +1,210 @@
+{
+  "name": "RoFruWeb - Excel Artikelimport",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "excel-upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-400, 0],
+      "id": "webhook-excel-upload",
+      "name": "Webhook - Excel Upload",
+      "webhookId": "excel-upload"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Excel from Base64\nconst XLSX = require('xlsx');\n\nconst fileBase64 = $input.first().json.body.fileBase64;\nconst fileName = $input.first().json.body.fileName;\n\n// Decode Base64 to buffer\nconst buffer = Buffer.from(fileBase64, 'base64');\n\n// Parse Excel\nconst workbook = XLSX.read(buffer, { type: 'buffer' });\nconst sheetName = workbook.SheetNames[0];\nconst sheet = workbook.Sheets[sheetName];\n\n// Convert to JSON - skip first row (title) and use second row as headers\nconst rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });\n\n// Header is in row 2 (index 1)\nconst headers = rawData[1];\nconst dataRows = rawData.slice(2); // Start from row 3\n\n// Map column indices\nconst columnMap = {\n  articleNumber: 0,      // Artikelnummer\n  articleTextDe: 1,      // Artikeltext deutsch\n  labelTextDe: 2,        // Etikettentext deutsch\n  labelTextFr: 3,        // Etikettentext französisch\n  labelTextIt: 4,        // Etikettentext italienisch\n  category: 5,           // Bedarfsbereich\n  genus: 6,              // Gattung\n  productCategory: 7,    // Produktkategorie\n  branding: 8,           // Branding\n  coBranding: 9,         // Co-Branding\n  gtinCu: 10,            // GTIN CU\n  gtinTu: 11             // GTIN TU\n};\n\n// Transform rows to articles\nconst articles = dataRows\n  .filter(row => row[columnMap.articleNumber]) // Skip empty rows\n  .map(row => {\n    const getValue = (idx) => {\n      const val = row[idx];\n      if (val === undefined || val === null || val === 'None') return null;\n      return String(val).trim();\n    };\n    \n    return {\n      article_number: getValue(columnMap.articleNumber),\n      article_text_de: getValue(columnMap.articleTextDe) || '',\n      label_text_de: getValue(columnMap.labelTextDe),\n      label_text_fr: getValue(columnMap.labelTextFr),\n      label_text_it: getValue(columnMap.labelTextIt),\n      category: getValue(columnMap.category),\n      genus: getValue(columnMap.genus),\n      product_category: getValue(columnMap.productCategory),\n      branding: getValue(columnMap.branding),\n      co_branding: getValue(columnMap.coBranding),\n      gtin_cu: getValue(columnMap.gtinCu),\n      gtin_tu: getValue(columnMap.gtinTu)\n    };\n  })\n  .filter(article => article.article_number); // Final filter for valid articles\n\nreturn {\n  json: {\n    articles: articles,\n    totalCount: articles.length,\n    fileName: fileName\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 0],
+      "id": "code-parse-excel",
+      "name": "Code - Parse Excel"
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [80, 0],
+      "id": "split-batches",
+      "name": "Split In Batches"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare batch for Supabase upsert\nconst articles = $input.first().json.articles;\nconst batch = $input.first().json.batch || articles;\n\n// Return each article as a separate item for loop\nreturn batch.map(article => ({ json: article }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 200],
+      "id": "code-prepare-batch",
+      "name": "Code - Prepare Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://eocngtxcbdzuxjsjcsss.supabase.co/rest/v1/articles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $credentials.apiKey }}"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 200],
+      "id": "supabase-upsert",
+      "name": "Supabase Upsert",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Supabase Auth"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 1000,
+      "maxTries": 3,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [560, 200],
+      "id": "aggregate-results",
+      "name": "Aggregate Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Count successful and failed operations\nconst allItems = $input.all();\nconst aggregatedData = allItems[0]?.json?.data || [];\n\nlet successCount = 0;\nlet errorCount = 0;\n\n// Check each result for errors\nfor (const item of aggregatedData) {\n  if (item.error) {\n    errorCount++;\n  } else {\n    successCount++;\n  }\n}\n\n// Get total from original parse\nconst originalCount = $('Code - Parse Excel').first().json.totalCount;\n\nreturn {\n  json: {\n    success: errorCount === 0,\n    message: errorCount === 0 \n      ? `Import erfolgreich: ${successCount} Artikel verarbeitet`\n      : `Import abgeschlossen: ${successCount} erfolgreich, ${errorCount} Fehler`,\n    count: successCount,\n    errors: errorCount,\n    total: originalCount\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [560, 0],
+      "id": "code-summarize",
+      "name": "Code - Summarize"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 0],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook - Excel Upload": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Excel": {
+      "main": [
+        [
+          {
+            "node": "Code - Prepare Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Prepare Items": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Upsert": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Code - Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Summarize": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "rofruscan"
+  },
+  "pinData": {}
+}

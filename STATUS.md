@@ -118,7 +118,7 @@
 ## Architektur
 
 ```
-rofruweb/
+RoFruWeb/
 ├── src/
 │   ├── app/                      # Next.js App Router
 │   │   ├── (auth)/               # Auth-Gruppen-Layout

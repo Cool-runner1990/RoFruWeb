@@ -3,26 +3,58 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePositions } from '@/lib/hooks/usePositions';
+import { useArticles, useArticleCount } from '@/lib/hooks/useArticles';
 import { ViewMode } from '@/types';
 import Header from '@/components/layout/Header';
+import Sidebar, { TabType } from '@/components/layout/Sidebar';
 import DatePicker from '@/components/dashboard/DatePicker';
 import ViewModeSelector from '@/components/dashboard/ViewModeSelector';
 import PositionFeedCard from '@/components/dashboard/PositionFeedCard';
 import PositionGridCard from '@/components/dashboard/PositionGridCard';
 import PositionListItem from '@/components/dashboard/PositionListItem';
 import EmptyState from '@/components/dashboard/EmptyState';
+import ExcelUpload from '@/components/ean/ExcelUpload';
+import ArticleTable from '@/components/ean/ArticleTable';
 import Spinner from '@/components/ui/Spinner';
 import Input from '@/components/ui/Input';
-import { Search } from 'lucide-react';
+import { Search, FileSpreadsheet, Upload, Database } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { AppleCharacter, OrangeCharacter, PearCharacter, LemonCharacter, GrapesCharacter } from '@/components/ui/FruitCharacters';
+
+type EanSubTab = 'upload' | 'verwaltung';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null); // null = alle Daten
+  
+  // Tab & Sidebar state
+  const [activeTab, setActiveTab] = useState<TabType>('foto');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // EAN sub-tab state
+  const [eanSubTab, setEanSubTab] = useState<EanSubTab>('verwaltung');
+  
+  // Photo tab state
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Photo data
   const { positions, isLoading } = usePositions(selectedDate || undefined);
+
+  // Article data
+  const {
+    articles,
+    isLoading: articlesLoading,
+    totalCount,
+    page,
+    pageSize,
+    searchTerm: articleSearchTerm,
+    setSearchTerm: setArticleSearchTerm,
+    setPage,
+    invalidate: invalidateArticles,
+  } = useArticles();
+
+  const { count: articleCount } = useArticleCount();
 
   const filteredPositions = useMemo(() => {
     if (!searchTerm) return positions;
@@ -33,6 +65,12 @@ export default function DashboardPage() {
 
   const handlePositionClick = (positionCode: string) => {
     router.push(`/position/${positionCode}`);
+  };
+
+  const handleUploadSuccess = () => {
+    invalidateArticles();
+    // Nach erfolgreichem Upload zur Verwaltung wechseln
+    setEanSubTab('verwaltung');
   };
 
   const renderPositions = () => {
@@ -88,6 +126,111 @@ export default function DashboardPage() {
       </div>
     );
   };
+
+  const renderFotoContent = () => (
+    <>
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-on-surface">Fotos</h2>
+            <p className="mt-1 text-on-surface-variant">
+              Wareneingangsfotos verwalten
+            </p>
+          </div>
+          <ViewModeSelector
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant z-10" />
+            <Input
+              type="text"
+              placeholder="Position suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="!pl-14"
+            />
+          </div>
+        </div>
+      </div>
+
+      {renderPositions()}
+    </>
+  );
+
+  const renderEanContent = () => (
+    <>
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-on-surface">Artikelstammdaten</h2>
+            <p className="mt-1 text-on-surface-variant">
+              EAN-Codes und Artikelinformationen verwalten
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-on-surface-variant">
+            <FileSpreadsheet className="h-5 w-5" />
+            <span className="text-sm font-medium">
+              {articleCount} Artikel
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Sub-Tab Navigation */}
+      <div className="mb-6">
+        <div className="inline-flex rounded-xl bg-surface-variant/30 p-1">
+          <button
+            onClick={() => setEanSubTab('upload')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+              eanSubTab === 'upload'
+                ? 'bg-surface text-on-surface shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            )}
+          >
+            <Upload className="h-4 w-4" />
+            Upload
+          </button>
+          <button
+            onClick={() => setEanSubTab('verwaltung')}
+            className={cn(
+              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+              eanSubTab === 'verwaltung'
+                ? 'bg-surface text-on-surface shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            )}
+          >
+            <Database className="h-4 w-4" />
+            Verwaltung
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-Tab Content */}
+      {eanSubTab === 'upload' ? (
+        <div className="rounded-2xl border border-outline/20 bg-surface/50 backdrop-blur-sm p-6">
+          <ExcelUpload onUploadSuccess={handleUploadSuccess} />
+        </div>
+      ) : (
+        <ArticleTable
+          articles={articles}
+          isLoading={articlesLoading}
+          totalCount={totalCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          searchTerm={articleSearchTerm}
+          onSearchChange={setArticleSearchTerm}
+        />
+      )}
+    </>
+  );
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden">
@@ -198,40 +341,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Header />
+      <Header onMenuClick={() => setSidebarOpen(true)} />
 
-      <main className="relative z-10 mx-auto max-w-7xl p-4 lg:p-6">
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-on-surface">Dashboard</h2>
-              <p className="mt-1 text-on-surface-variant">
-                Wareneingangsfotos verwalten
-              </p>
-            </div>
-            <ViewModeSelector
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-            />
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+
+        {/* Main Content */}
+        <main className="relative z-10 flex-1 p-4 lg:p-6">
+          <div className="mx-auto max-w-6xl">
+            {activeTab === 'foto' ? renderFotoContent() : renderEanContent()}
           </div>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant z-10" />
-              <Input
-                type="text"
-                placeholder="Position suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="!pl-14"
-              />
-            </div>
-          </div>
-        </div>
-
-        {renderPositions()}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

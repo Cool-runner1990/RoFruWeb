@@ -124,8 +124,8 @@ netlify deploy --prod --dir=.next
 ### Option 3: Docker
 ```dockerfile
 # Dockerfile bereits vorbereitet
-docker build -t rofruweb .
-docker run -p 3000:3000 rofruweb
+docker build -t RoFruWeb .
+docker run -p 3000:3000 RoFruWeb
 ```
 
 ### Option 4: Selbst-Hosting
@@ -136,7 +136,7 @@ npm run build
 # Start
 npm run start
 # oder mit PM2:
-pm2 start npm --name rofruweb -- start
+pm2 start npm --name RoFruWeb -- start
 ```
 
 ## 🔧 Troubleshooting

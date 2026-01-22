@@ -73,3 +73,6 @@ export interface Document {
   uploaded_at: string;
   uploaded_by?: string;
 }
+
+// Re-export Article types
+export * from './article';

@@ -138,7 +138,7 @@
       "parameters": {
         "toRecipients": "wareneingang@rodifructus.ch",
         "subject": "=Wareneingang zu {{ $('Webhook').first().json.body.positionCode }} - {{ $('Webhook').first().json.body.photos.length }} Foto(s)",
-        "bodyContent": "=Hey 😊<br>\n<br>\nEs wurden neue Fotos zu den Wareneingängen hochgeladen.<br>\nPosition Code: <b>{{ $('Webhook').first().json.body.positionCode }}</b><br>\nAnzahl: <b>{{ $('Webhook').first().json.body.photos.length }}</b>\n<br>\n<br>\nDiese kannst du dir hier anschauen:<br>\n📁 <a href=\"https://mobileobjects.mo-nextcloud.ch/index.php/apps/files/files/47848?dir=/mO-Server-Pro/RoFruScan/WareneingangFotos\">Nextcloud</a><br>\n🌐 <a href=\"https://rofruweb.vercel.app/position/{{ $('Webhook').first().json.body.positionCode }}\">RoFruWeb</a>",
+        "bodyContent": "=Hey 😊<br>\n<br>\nEs wurden neue Fotos zu den Wareneingängen hochgeladen.<br>\nPosition Code: <b>{{ $('Webhook').first().json.body.positionCode }}</b><br>\nAnzahl: <b>{{ $('Webhook').first().json.body.photos.length }}</b>\n<br>\n<br>\nDiese kannst du dir hier anschauen:<br>\n📁 <a href=\"https://mobileobjects.mo-nextcloud.ch/index.php/apps/files/files/47848?dir=/mO-Server-Pro/RoFruScan/WareneingangFotos\">Nextcloud</a><br>\n🌐 <a href=\"https://RoFruWeb.vercel.app/position/{{ $('Webhook').first().json.body.positionCode }}\">RoFruWeb</a>",
         "additionalFields": {
           "bccRecipients": "darnoldi@mobileobjects.ch",
           "from": "RoFruScan-App",
