@@ -1,107 +1,115 @@
 'use client';
 
-import { Camera, Barcode, X } from 'lucide-react';
+import { Camera, Barcode, Menu, ChevronLeft, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Button from '@/components/ui/Button';
+import Image from 'next/image';
 
-export type TabType = 'foto' | 'ean';
+export type TabType = 'foto' | 'ean' | 'admin';
 
 interface SidebarProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   isOpen: boolean;
-  onClose: () => void;
+  onToggle: () => void;
 }
 
-const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
+interface TabConfig {
+  id: TabType;
+  label: string;
+  icon: React.ElementType;
+  isAdmin?: boolean;
+}
+
+const tabs: TabConfig[] = [
   { id: 'foto', label: 'Foto', icon: Camera },
   { id: 'ean', label: 'EAN', icon: Barcode },
+  { id: 'admin', label: 'Admin', icon: Crown, isAdmin: true },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, isOpen, onToggle }: SidebarProps) {
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={onClose}
-        />
+    <aside
+      className={cn(
+        'fixed left-0 top-16 z-40 flex flex-col',
+        'sidebar-gradient transition-all duration-300 ease-in-out',
+        'border-r border-white/10',
+        'h-[calc(100vh-4rem)]',
+        isOpen ? 'w-56' : 'w-14'
       )}
+    >
+      {/* Toggle Button */}
+      <div className="flex h-14 items-center px-3">
+        <button
+          onClick={onToggle}
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 transition-colors"
+          aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
+        >
+          {isOpen ? (
+            <ChevronLeft className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </button>
+      </div>
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          'fixed left-0 top-0 z-50 h-full w-56 transform transition-transform duration-300 ease-in-out',
-          'lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] lg:translate-x-0 lg:z-auto lg:flex-shrink-0',
-          'bg-surface/80 backdrop-blur-xl border-r border-outline/20',
-          'flex flex-col',
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      {/* Tab Navigation */}
+      <nav className="flex-1 px-2 py-2 space-y-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              title={!isOpen ? tab.label : undefined}
+              className={cn(
+                'w-full flex items-center gap-3 rounded-xl transition-all duration-200',
+                isOpen ? 'px-4 py-3' : 'px-2 py-3 justify-center',
+                'text-left font-medium',
+                tab.isAdmin && 'admin-badge',
+                tab.isAdmin && isActive && 'active',
+                isActive
+                  ? 'bg-white/20 text-white shadow-lg'
+                  : tab.isAdmin
+                    ? 'text-white/70 hover:text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white'
+              )}
+            >
+              <Icon className={cn(
+                'h-5 w-5 flex-shrink-0',
+                tab.isAdmin && 'admin-crown'
+              )} />
+              {isOpen && (
+                <span className={cn(tab.isAdmin && 'admin-text font-semibold')}>
+                  {tab.label}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Footer - Company Logo */}
+      <div className={cn(
+        'mt-auto p-3 flex flex-col items-center',
+        isOpen ? 'gap-1' : 'gap-0'
+      )}>
+        {isOpen && (
+          <span className="text-xs text-white/50">von</span>
         )}
-      >
-        {/* Mobile Close Button */}
-        <div className="flex items-center justify-between p-4 lg:hidden">
-          <span className="text-lg font-semibold text-on-surface">Navigation</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            aria-label="Menü schließen"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+        <div className={cn(
+          'relative',
+          isOpen ? 'h-24 w-24' : 'h-9 w-9'
+        )}>
+          <Image
+            src="/logo-mobileobjects.png"
+            alt="mobileObjects Logo"
+            fill
+            className="object-contain"
+          />
         </div>
-
-        {/* Desktop Header */}
-        <div className="hidden lg:block px-4 pt-4 pb-2">
-          <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-            Bereich
-          </span>
-        </div>
-
-        {/* Tab Navigation */}
-        <nav className="px-3 py-2 space-y-1 flex-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  onTabChange(tab.id);
-                  // Only close on mobile (when sidebar is open as overlay)
-                  if (window.innerWidth < 1024) {
-                    onClose();
-                  }
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
-                  'text-left font-medium',
-                  isActive
-                    ? 'bg-primary text-on-primary shadow-lg shadow-primary/25'
-                    : 'text-on-surface hover:bg-surface-variant/50'
-                )}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Info Section - now at bottom using flex */}
-        <div className="p-3 mt-auto">
-          <div className="rounded-xl bg-surface-variant/30 p-3">
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              {activeTab === 'foto' 
-                ? 'Wareneingangsfotos nach Positionen'
-                : 'Artikelstammdaten importieren'
-              }
-            </p>
-          </div>
-        </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }

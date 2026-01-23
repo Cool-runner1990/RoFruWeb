@@ -1,182 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Package, Barcode, Layers, Grid3X3, Tag } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Package, Barcode, Layers, Grid3X3, Tag, Folder, FolderOpen, FileText, Hash, Globe, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Article } from '@/types';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
-
-// Emoji-Mappings für Bedarfsbereiche
-const categoryEmojis: Record<string, string> = {
-  'Früchte': '🍎',
-  'Fruechte': '🍎',
-  'Obst': '🍊',
-  'Gemüse': '🥬',
-  'Gemuese': '🥬',
-  'Salate': '🥗',
-  'Kräuter': '🌿',
-  'Kraeuter': '🌿',
-  'Pilze': '🍄',
-  'Nüsse': '🥜',
-  'Nuesse': '🥜',
-  'Beeren': '🫐',
-  'Exoten': '🥭',
-  'Zitrusfrüchte': '🍋',
-  'Kartoffeln': '🥔',
-  'Zwiebeln': '🧅',
-  'default': '📦'
-};
-
-// Emoji-Mappings für Gattungen
-const genusEmojis: Record<string, string> = {
-  // Früchte
-  'Kernobst': '🍎',
-  'Steinobst': '🍑',
-  'Beerenobst': '🍓',
-  'Zitrusfrüchte': '🍊',
-  'Zitrusfruechte': '🍊',
-  'Schalenobst': '🥜',
-  'Exoten': '🥭',
-  'Südfrüchte': '🍌',
-  'Suedfruechte': '🍌',
-  'Trauben': '🍇',
-  'Melonen': '🍈',
-  // Gemüse
-  'Blattgemüse': '🥬',
-  'Blattgemuese': '🥬',
-  'Kohlgemüse': '🥦',
-  'Kohlgemuese': '🥦',
-  'Wurzelgemüse': '🥕',
-  'Wurzelgemuese': '🥕',
-  'Fruchtgemüse': '🍅',
-  'Fruchtgemuese': '🍅',
-  'Zwiebelgemüse': '🧅',
-  'Zwiebelgemuese': '🧅',
-  'Hülsenfrüchte': '🫛',
-  'Huelsenfruechte': '🫛',
-  'Sprossgemüse': '🌱',
-  'Sprossgemuese': '🌱',
-  'Stängelgemüse': '🥒',
-  'Staengelgemuese': '🥒',
-  // Salate
-  'Salate': '🥗',
-  'Blattsalate': '🥬',
-  'Kopfsalate': '🥬',
-  // Kräuter & Pilze
-  'Kräuter': '🌿',
-  'Kraeuter': '🌿',
-  'Pilze': '🍄',
-  'Kulturpilze': '🍄',
-  'Wildpilze': '🍄',
-  'default': '🌱'
-};
-
-// Emoji für Produktkategorien
-const getProductEmoji = (productCategory: string): string => {
-  const lower = productCategory.toLowerCase();
-  
-  // Früchte
-  if (lower.includes('apfel') || lower.includes('äpfel')) return '🍎';
-  if (lower.includes('birne')) return '🍐';
-  if (lower.includes('kirsche')) return '🍒';
-  if (lower.includes('pflaume') || lower.includes('zwetschge')) return '🫐';
-  if (lower.includes('pfirsich')) return '🍑';
-  if (lower.includes('aprikose')) return '🍑';
-  if (lower.includes('erdbeere')) return '🍓';
-  if (lower.includes('himbeere')) return '🫐';
-  if (lower.includes('heidelbeere') || lower.includes('blaubeere')) return '🫐';
-  if (lower.includes('brombeere')) return '🫐';
-  if (lower.includes('johannisbeere')) return '🫐';
-  if (lower.includes('traube')) return '🍇';
-  if (lower.includes('orange')) return '🍊';
-  if (lower.includes('mandarine') || lower.includes('clementine')) return '🍊';
-  if (lower.includes('zitrone')) return '🍋';
-  if (lower.includes('limette')) return '🍋';
-  if (lower.includes('grapefruit')) return '🍊';
-  if (lower.includes('banane')) return '🍌';
-  if (lower.includes('ananas')) return '🍍';
-  if (lower.includes('mango')) return '🥭';
-  if (lower.includes('kiwi')) return '🥝';
-  if (lower.includes('melone')) return '🍈';
-  if (lower.includes('wassermelone')) return '🍉';
-  if (lower.includes('kokosnuss')) return '🥥';
-  if (lower.includes('avocado')) return '🥑';
-  if (lower.includes('granatapfel')) return '🫐';
-  if (lower.includes('feige')) return '🫐';
-  if (lower.includes('dattel')) return '🫐';
-  
-  // Gemüse
-  if (lower.includes('tomate')) return '🍅';
-  if (lower.includes('gurke')) return '🥒';
-  if (lower.includes('paprika')) return '🫑';
-  if (lower.includes('peperoni') || lower.includes('chili')) return '🌶️';
-  if (lower.includes('aubergine')) return '🍆';
-  if (lower.includes('zucchini') || lower.includes('zucchetti')) return '🥒';
-  if (lower.includes('kürbis')) return '🎃';
-  if (lower.includes('karotte') || lower.includes('möhre') || lower.includes('rüebli')) return '🥕';
-  if (lower.includes('kartoffel')) return '🥔';
-  if (lower.includes('zwiebel')) return '🧅';
-  if (lower.includes('knoblauch')) return '🧄';
-  if (lower.includes('lauch') || lower.includes('porree')) return '🧅';
-  if (lower.includes('sellerie')) return '🥬';
-  if (lower.includes('brokkoli') || lower.includes('broccoli')) return '🥦';
-  if (lower.includes('blumenkohl')) return '🥦';
-  if (lower.includes('kohl') || lower.includes('kraut')) return '🥬';
-  if (lower.includes('spinat')) return '🥬';
-  if (lower.includes('mangold')) return '🥬';
-  if (lower.includes('salat') || lower.includes('lattich')) return '🥬';
-  if (lower.includes('rucola') || lower.includes('rocket')) return '🥬';
-  if (lower.includes('chicorée') || lower.includes('chicoree') || lower.includes('endivie')) return '🥬';
-  if (lower.includes('fenchel')) return '🥬';
-  if (lower.includes('spargel')) return '🥒';
-  if (lower.includes('mais')) return '🌽';
-  if (lower.includes('bohne')) return '🫛';
-  if (lower.includes('erbse')) return '🫛';
-  if (lower.includes('radieschen') || lower.includes('rettich')) return '🥕';
-  if (lower.includes('randen') || lower.includes('rote bete') || lower.includes('rote beete')) return '🥕';
-  
-  // Kräuter & Pilze
-  if (lower.includes('basilikum')) return '🌿';
-  if (lower.includes('petersilie')) return '🌿';
-  if (lower.includes('schnittlauch')) return '🌿';
-  if (lower.includes('dill')) return '🌿';
-  if (lower.includes('rosmarin')) return '🌿';
-  if (lower.includes('thymian')) return '🌿';
-  if (lower.includes('minze')) return '🌿';
-  if (lower.includes('koriander')) return '🌿';
-  if (lower.includes('pilz') || lower.includes('champignon')) return '🍄';
-  
-  return '🏷️';
-};
-
-// Hilfsfunktion für Kategorie-Emoji
-const getCategoryEmoji = (category: string): string => {
-  // Erst exakte Übereinstimmung prüfen
-  if (categoryEmojis[category]) return categoryEmojis[category];
-  
-  // Dann nach Teilübereinstimmungen suchen
-  const lower = category.toLowerCase();
-  for (const [key, emoji] of Object.entries(categoryEmojis)) {
-    if (lower.includes(key.toLowerCase())) return emoji;
-  }
-  
-  return categoryEmojis['default'];
-};
-
-// Hilfsfunktion für Gattungs-Emoji
-const getGenusEmoji = (genus: string): string => {
-  // Erst exakte Übereinstimmung prüfen
-  if (genusEmojis[genus]) return genusEmojis[genus];
-  
-  // Dann nach Teilübereinstimmungen suchen
-  const lower = genus.toLowerCase();
-  for (const [key, emoji] of Object.entries(genusEmojis)) {
-    if (lower.includes(key.toLowerCase())) return emoji;
-  }
-  
-  return genusEmojis['default'];
-};
 
 interface ArticleTableProps {
   articles: Article[];
@@ -447,14 +276,18 @@ export default function ArticleTable({
                   ) : (
                     <ChevronRight className="h-5 w-5 text-on-surface-variant flex-shrink-0" />
                   )}
-                  <span className="text-2xl" role="img" aria-label={category}>
-                    {getCategoryEmoji(category)}
-                  </span>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    {isCategoryExpanded ? (
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Folder className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
                   <div className="flex-1 text-left">
                     <span className="font-semibold text-on-surface">{category}</span>
                   </div>
-                  <span className="text-sm text-on-surface-variant bg-surface-variant/50 px-2 py-0.5 rounded-full">
-                    {categoryCount} Artikel
+                  <span className="text-sm text-on-surface-variant bg-surface-variant/50 px-2.5 py-1 rounded-full">
+                    {categoryCount.toLocaleString('de-DE')} Artikel
                   </span>
                 </button>
 
@@ -479,13 +312,13 @@ export default function ArticleTable({
                             ) : (
                               <ChevronRight className="h-4 w-4 text-on-surface-variant flex-shrink-0" />
                             )}
-                            <span className="text-lg" role="img" aria-label={genus}>
-                              {getGenusEmoji(genus)}
-                            </span>
+                            <div className="flex-shrink-0 w-6 h-6 rounded-md bg-secondary/10 flex items-center justify-center">
+                              <Grid3X3 className="h-3.5 w-3.5 text-secondary" />
+                            </div>
                             <span className="flex-1 text-left font-medium text-on-surface">
                               {genus}
                             </span>
-                            <span className="text-xs text-on-surface-variant">
+                            <span className="text-xs text-on-surface-variant bg-surface-variant/30 px-2 py-0.5 rounded">
                               {genusCount}
                             </span>
                           </button>
@@ -510,9 +343,9 @@ export default function ArticleTable({
                                       ) : (
                                         <ChevronRight className="h-4 w-4 text-on-surface-variant/70 flex-shrink-0" />
                                       )}
-                                      <span className="text-base" role="img" aria-label={productCategory}>
-                                        {getProductEmoji(productCategory)}
-                                      </span>
+                                      <div className="flex-shrink-0 w-5 h-5 rounded bg-tertiary/10 flex items-center justify-center">
+                                        <Tag className="h-3 w-3 text-tertiary" />
+                                      </div>
                                       <span className="flex-1 text-left text-sm text-on-surface">
                                         {productCategory}
                                       </span>
@@ -580,7 +413,7 @@ export default function ArticleTable({
                                               {/* Artikel Details - komplett überarbeitet */}
                                               {isArticleExpanded && (
                                                 <div className="mx-4 mb-4 ml-20">
-                                                  <div className="rounded-xl border border-outline/20 bg-surface overflow-hidden">
+                                                  <div className="rounded-xl border-2 border-primary/50 bg-surface overflow-hidden shadow-[0_0_20px_rgba(59,130,246,0.3)] ring-2 ring-primary/20">
                                                     {/* Header mit Artikelnummer */}
                                                     <div className="bg-primary/5 px-4 py-3 border-b border-outline/10">
                                                       <div className="flex items-center justify-between">
@@ -602,19 +435,20 @@ export default function ArticleTable({
                                                         {/* Artikeltext */}
                                                         <div className="space-y-3">
                                                           <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
-                                                            📝 Artikeltext
+                                                            <Type className="h-3.5 w-3.5" />
+                                                            Artikeltext
                                                           </h4>
                                                           <div className="space-y-2">
                                                             <div className="p-3 rounded-lg bg-surface-variant/30">
                                                               <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                <span>🇩🇪</span> Deutsch
+                                                                <span className="font-semibold">DE</span> Deutsch
                                                               </p>
                                                               <p className="text-sm text-on-surface">{article.article_text_de || '-'}</p>
                                                             </div>
                                                             {article.co_branding && (
                                                               <div className="p-3 rounded-lg bg-surface-variant/30">
                                                                 <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                  <span>🏷️</span> Co-Branding
+                                                                  <Tag className="h-3 w-3" /> Co-Branding
                                                                 </p>
                                                                 <p className="text-sm text-on-surface">{article.co_branding}</p>
                                                               </div>
@@ -625,12 +459,13 @@ export default function ArticleTable({
                                                         {/* EAN-Codes */}
                                                         <div className="space-y-3">
                                                           <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
-                                                            📊 EAN-Codes
+                                                            <Hash className="h-3.5 w-3.5" />
+                                                            EAN-Codes
                                                           </h4>
                                                           <div className="space-y-2">
                                                             <div className="p-3 rounded-lg bg-surface-variant/30">
                                                               <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                <span>🛒</span> GTIN CU (Verbraucher)
+                                                                <Barcode className="h-3 w-3" /> GTIN CU (Verbraucher)
                                                               </p>
                                                               <p className="font-mono text-sm text-on-surface font-medium">
                                                                 {formatGtin(article.gtin_cu)}
@@ -638,7 +473,7 @@ export default function ArticleTable({
                                                             </div>
                                                             <div className="p-3 rounded-lg bg-surface-variant/30">
                                                               <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                <span>📦</span> GTIN TU (Handel)
+                                                                <Package className="h-3 w-3" /> GTIN TU (Handel)
                                                               </p>
                                                               <p className="font-mono text-sm text-on-surface font-medium">
                                                                 {formatGtin(article.gtin_tu)}
@@ -650,12 +485,13 @@ export default function ArticleTable({
                                                         {/* Mehrsprachig */}
                                                         <div className="space-y-3">
                                                           <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-2">
-                                                            🌍 Mehrsprachig
+                                                            <Globe className="h-3.5 w-3.5" />
+                                                            Mehrsprachig
                                                           </h4>
                                                           <div className="space-y-2">
                                                             <div className="p-3 rounded-lg bg-surface-variant/30">
                                                               <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                <span>🇫🇷</span> Französisch
+                                                                <span className="font-semibold">FR</span> Französisch
                                                               </p>
                                                               <p className="text-sm text-on-surface">
                                                                 {article.label_text_fr || '-'}
@@ -663,7 +499,7 @@ export default function ArticleTable({
                                                             </div>
                                                             <div className="p-3 rounded-lg bg-surface-variant/30">
                                                               <p className="text-xs text-on-surface-variant mb-1 flex items-center gap-1.5">
-                                                                <span>🇮🇹</span> Italienisch
+                                                                <span className="font-semibold">IT</span> Italienisch
                                                               </p>
                                                               <p className="text-sm text-on-surface">
                                                                 {article.label_text_it || '-'}

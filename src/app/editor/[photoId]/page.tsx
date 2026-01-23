@@ -186,7 +186,7 @@ export default function ImageEditorPage({ params }: ImageEditorPageProps) {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="mx-auto max-w-7xl p-4 lg:p-6">
+      <main className="mx-auto max-w-7xl pt-20 mt-16 p-4 lg:p-6">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">

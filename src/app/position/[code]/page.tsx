@@ -273,7 +273,7 @@ export default function PositionDetailPage({ params }: PositionDetailPageProps) 
 
       <Header />
 
-      <main className="relative z-10 mx-auto max-w-7xl p-4 lg:p-6">
+      <main className="relative z-10 mx-auto max-w-7xl pt-20 mt-16 p-4 lg:p-6">
         {/* Header */}
         <div className="mb-6 space-y-4">
           <div className="flex items-center gap-4">

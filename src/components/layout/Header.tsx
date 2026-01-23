@@ -1,15 +1,13 @@
-import { LogOut, Menu } from 'lucide-react';
+'use client';
+
+import { LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import ThemeToggle from './ThemeToggle';
 import Image from 'next/image';
 
-interface HeaderProps {
-  onMenuClick?: () => void;
-}
-
-export default function Header({ onMenuClick }: HeaderProps) {
+export default function Header() {
   const router = useRouter();
   const supabase = createClient();
 
@@ -20,25 +18,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 header-gradient px-4 py-2">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        {/* Linke Seite - Menu Button */}
-        <div className="flex items-center w-24">
-          {onMenuClick && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onMenuClick}
-              aria-label="Menü öffnen"
-              className="lg:hidden text-white hover:bg-white/10"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
-        </div>
-
-        {/* Mitte - Logo zentriert */}
-        <div className="flex flex-col items-center justify-center flex-1">
+    <header className="fixed top-0 left-0 right-0 z-50 header-gradient px-4 py-2">
+      <div className="relative flex items-center justify-center h-12">
+        {/* Zentral - Logo */}
+        <div className="flex items-center">
           <div className="relative h-12 w-48">
             <Image
               src="/logo-header.png"
@@ -50,8 +33,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </div>
         </div>
 
-        {/* Rechte Seite - Theme Toggle & Logout */}
-        <div className="flex items-center gap-2 w-24 justify-end">
+        {/* Rechte Seite - Theme Toggle & Logout (absolut positioniert) */}
+        <div className="absolute right-0 flex items-center gap-2">
           <ThemeToggle className="text-white hover:bg-white/10" />
           <Button
             variant="ghost"

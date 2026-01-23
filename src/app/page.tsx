@@ -15,26 +15,28 @@ import PositionListItem from '@/components/dashboard/PositionListItem';
 import EmptyState from '@/components/dashboard/EmptyState';
 import ExcelUpload from '@/components/ean/ExcelUpload';
 import ArticleTable from '@/components/ean/ArticleTable';
+import ScansList from '@/components/ean/ScansList';
 import Spinner from '@/components/ui/Spinner';
 import Input from '@/components/ui/Input';
-import { Search, FileSpreadsheet, Upload, Database } from 'lucide-react';
+import { Search, FileSpreadsheet, Upload, Database, Scan, Crown, Shield, Settings, Users } from 'lucide-react';
+import { useScanCount } from '@/lib/hooks/useScans';
 import { cn } from '@/lib/utils';
 import { AppleCharacter, OrangeCharacter, PearCharacter, LemonCharacter, GrapesCharacter } from '@/components/ui/FruitCharacters';
 
-type EanSubTab = 'upload' | 'verwaltung';
+type EanSubTab = 'scans' | 'upload' | 'verwaltung';
 
 export default function DashboardPage() {
   const router = useRouter();
   
   // Tab & Sidebar state
   const [activeTab, setActiveTab] = useState<TabType>('foto');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // EAN sub-tab state
-  const [eanSubTab, setEanSubTab] = useState<EanSubTab>('verwaltung');
+  const [eanSubTab, setEanSubTab] = useState<EanSubTab>('scans');
   
-  // Photo tab state
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  // Photo tab state - Heute als Standard
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('feed');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -55,6 +57,7 @@ export default function DashboardPage() {
   } = useArticles();
 
   const { count: articleCount } = useArticleCount();
+  const { count: scanCount } = useScanCount();
 
   const filteredPositions = useMemo(() => {
     if (!searchTerm) return positions;
@@ -184,40 +187,61 @@ export default function DashboardPage() {
 
       {/* Sub-Tab Navigation */}
       <div className="mb-6">
-        <div className="inline-flex rounded-xl bg-surface-variant/30 p-1">
+        <div className="inline-flex rounded-xl bg-surface-variant/30 p-1 gap-1">
           <button
-            onClick={() => setEanSubTab('upload')}
+            onClick={() => setEanSubTab('scans')}
             className={cn(
               'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
-              eanSubTab === 'upload'
+              eanSubTab === 'scans'
                 ? 'bg-surface text-on-surface shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
             )}
           >
-            <Upload className="h-4 w-4" />
-            Upload
+            <Scan className="h-4 w-4" />
+            Scans
+            {scanCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                {scanCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setEanSubTab('upload')}
+            className={cn(
+              'admin-tab flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+              eanSubTab === 'upload'
+                ? 'active bg-surface text-on-surface shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            )}
+          >
+            <Upload className="h-4 w-4 admin-icon" />
+            <span className="admin-text">Upload</span>
           </button>
           <button
             onClick={() => setEanSubTab('verwaltung')}
             className={cn(
-              'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
+              'admin-tab flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all',
               eanSubTab === 'verwaltung'
-                ? 'bg-surface text-on-surface shadow-sm'
+                ? 'active bg-surface text-on-surface shadow-sm'
                 : 'text-on-surface-variant hover:text-on-surface'
             )}
           >
-            <Database className="h-4 w-4" />
-            Verwaltung
+            <Database className="h-4 w-4 admin-icon" />
+            <span className="admin-text">Verwaltung</span>
           </button>
         </div>
       </div>
 
       {/* Sub-Tab Content */}
-      {eanSubTab === 'upload' ? (
+      {eanSubTab === 'scans' && (
+        <ScansList />
+      )}
+      {eanSubTab === 'upload' && (
         <div className="rounded-2xl border border-outline/20 bg-surface/50 backdrop-blur-sm p-6">
           <ExcelUpload onUploadSuccess={handleUploadSuccess} />
         </div>
-      ) : (
+      )}
+      {eanSubTab === 'verwaltung' && (
         <ArticleTable
           articles={articles}
           isLoading={articlesLoading}
@@ -229,6 +253,104 @@ export default function DashboardPage() {
           onSearchChange={setArticleSearchTerm}
         />
       )}
+    </>
+  );
+
+  const renderAdminContent = () => (
+    <>
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl admin-badge flex items-center justify-center">
+              <Crown className="h-6 w-6 admin-crown" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold admin-text">Administration</h2>
+              <p className="mt-1 text-on-surface-variant">
+                Systemeinstellungen und Benutzerverwaltung
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Cards */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Benutzer Card */}
+        <div className="rounded-2xl border border-outline/20 bg-surface/50 backdrop-blur-sm p-6 admin-tab">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-surface-variant/50 flex items-center justify-center">
+              <Users className="h-6 w-6 admin-icon" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-on-surface">Benutzer</h3>
+              <p className="text-sm text-on-surface-variant">Benutzerverwaltung</p>
+            </div>
+          </div>
+          <p className="text-sm text-on-surface-variant mb-4">
+            Benutzerkonten erstellen, bearbeiten und Berechtigungen verwalten.
+          </p>
+          <button className="w-full py-2 px-4 rounded-lg bg-surface-variant/50 text-on-surface-variant text-sm font-medium hover:bg-surface-variant transition-colors">
+            Demnächst verfügbar
+          </button>
+        </div>
+
+        {/* Einstellungen Card */}
+        <div className="rounded-2xl border border-outline/20 bg-surface/50 backdrop-blur-sm p-6 admin-tab">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-surface-variant/50 flex items-center justify-center">
+              <Settings className="h-6 w-6 admin-icon" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-on-surface">Einstellungen</h3>
+              <p className="text-sm text-on-surface-variant">Systemkonfiguration</p>
+            </div>
+          </div>
+          <p className="text-sm text-on-surface-variant mb-4">
+            Allgemeine Systemeinstellungen und Konfigurationsoptionen.
+          </p>
+          <button className="w-full py-2 px-4 rounded-lg bg-surface-variant/50 text-on-surface-variant text-sm font-medium hover:bg-surface-variant transition-colors">
+            Demnächst verfügbar
+          </button>
+        </div>
+
+        {/* Sicherheit Card */}
+        <div className="rounded-2xl border border-outline/20 bg-surface/50 backdrop-blur-sm p-6 admin-tab">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-surface-variant/50 flex items-center justify-center">
+              <Shield className="h-6 w-6 admin-icon" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-on-surface">Sicherheit</h3>
+              <p className="text-sm text-on-surface-variant">Zugriffssteuerung</p>
+            </div>
+          </div>
+          <p className="text-sm text-on-surface-variant mb-4">
+            Sicherheitseinstellungen, Audit-Logs und Zugriffskontrollen.
+          </p>
+          <button className="w-full py-2 px-4 rounded-lg bg-surface-variant/50 text-on-surface-variant text-sm font-medium hover:bg-surface-variant transition-colors">
+            Demnächst verfügbar
+          </button>
+        </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="mt-8 rounded-2xl admin-badge p-6">
+        <div className="flex items-start gap-4">
+          <Crown className="h-8 w-8 admin-crown flex-shrink-0 mt-1" />
+          <div>
+            <h3 className="font-semibold admin-text text-lg mb-2">
+              Admin-Bereich
+            </h3>
+            <p className="text-on-surface-variant">
+              Dieser Bereich ist für Administratoren reserviert. Hier können Sie systemweite 
+              Einstellungen vornehmen und die Anwendung konfigurieren. Die Funktionen werden 
+              in zukünftigen Updates erweitert.
+            </p>
+          </div>
+        </div>
+      </div>
     </>
   );
 
@@ -341,24 +463,28 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Header onMenuClick={() => setSidebarOpen(true)} />
+      {/* Header - durchgängig über gesamte Breite */}
+      <Header />
 
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+      {/* Sidebar - unter dem Header */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
-        {/* Main Content */}
-        <main className="relative z-10 flex-1 p-4 lg:p-6">
-          <div className="mx-auto max-w-6xl">
-            {activeTab === 'foto' ? renderFotoContent() : renderEanContent()}
-          </div>
-        </main>
-      </div>
+      {/* Main Content */}
+      <main 
+        className="relative z-10 pt-20 mt-16 p-4 lg:p-6 transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? '14rem' : '3.5rem' }}
+      >
+        <div className="mx-auto max-w-6xl">
+          {activeTab === 'foto' && renderFotoContent()}
+          {activeTab === 'ean' && renderEanContent()}
+          {activeTab === 'admin' && renderAdminContent()}
+        </div>
+      </main>
     </div>
   );
 }

@@ -76,3 +76,6 @@ export interface Document {
 
 // Re-export Article types
 export * from './article';
+
+// Re-export Scan types
+export * from './scan';
