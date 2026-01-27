@@ -244,3 +244,109 @@ export function useTodayScanCount() {
     isLoading,
   };
 }
+
+// Hook to get scans for a specific position
+export function useScansByPosition(positionCode: string) {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for live updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`scans-position-${positionCode}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'scans',
+          filter: `position_code=eq.${positionCode}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['scans', 'position', positionCode] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, queryClient, positionCode]);
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['scans', 'position', positionCode],
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from('scans')
+        .select(`
+          *,
+          article:articles(*)
+        `, { count: 'exact' })
+        .eq('position_code', positionCode)
+        .order('scanned_at', { ascending: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const scans: ScanWithArticle[] = (data || []).map((scan) => ({
+        ...scan,
+        article: scan.article as Article | null,
+      }));
+
+      return {
+        scans,
+        totalCount: count || 0,
+      };
+    },
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  return {
+    scans: data?.scans || [],
+    totalCount: data?.totalCount || 0,
+    isLoading,
+    error: error as Error | null,
+    refetch,
+  };
+}
+
+// Hook to get scan counts grouped by position code
+export function useScanCountsByPosition() {
+  const supabase = createClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['scans', 'counts', 'by-position'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('scans')
+        .select('position_code')
+        .not('position_code', 'is', null);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Count scans per position
+      const countMap = new Map<string, number>();
+      (data || []).forEach((scan) => {
+        if (scan.position_code) {
+          countMap.set(
+            scan.position_code,
+            (countMap.get(scan.position_code) || 0) + 1
+          );
+        }
+      });
+
+      return countMap;
+    },
+    staleTime: 30 * 1000,
+  });
+
+  return {
+    scanCounts: data || new Map<string, number>(),
+    isLoading,
+    error: error as Error | null,
+  };
+}

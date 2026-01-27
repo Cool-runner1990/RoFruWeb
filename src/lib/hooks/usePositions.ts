@@ -1,4 +1,5 @@
 import { usePhotos } from './usePhotos';
+import { useScanCountsByPosition } from './useScans';
 import { Position, PositionCategory } from '@/types';
 import { useMemo, useState, useEffect } from 'react';
 
@@ -11,6 +12,7 @@ function getPositionCategory(positionCode: string): PositionCategory {
 
 export function usePositions(date?: Date) {
   const { data: photos, isLoading, error } = usePhotos(date);
+  const { scanCounts } = useScanCountsByPosition();
   const [categoryVersion, setCategoryVersion] = useState(0);
 
   // Listener für localStorage-Änderungen, um bei Kategorie-Updates zu re-rendern
@@ -55,6 +57,7 @@ export function usePositions(date?: Date) {
           photos: [photo],
           first_photo_url: photo.image_url, // Direkte URL aus der DB
           photo_count: 1,
+          scan_count: scanCounts.get(photo.position_code) || 0,
           latest_captured_at: photo.captured_at,
           category: getPositionCategory(photo.position_code),
         });
@@ -66,7 +69,7 @@ export function usePositions(date?: Date) {
         new Date(b.latest_captured_at).getTime() -
         new Date(a.latest_captured_at).getTime()
     );
-  }, [photos, categoryVersion]);
+  }, [photos, categoryVersion, scanCounts]);
 
   return {
     positions,

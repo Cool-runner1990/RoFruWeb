@@ -14,9 +14,11 @@ import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/dashboard/EmptyState';
 import CategorySelector from '@/components/ui/CategorySelector';
 import EmailDialog from '@/components/ui/EmailDialog';
-import { ArrowLeft, Download, CheckSquare, Square, Mail, Edit2, FileText, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Download, CheckSquare, Square, Mail, Edit2, FileText, Plus, ChevronDown, ChevronUp, Barcode } from 'lucide-react';
 import DocumentUpload from '@/components/documents/DocumentUpload';
 import DocumentList from '@/components/documents/DocumentList';
+import PositionScansList from '@/components/ean/PositionScansList';
+import { useScansByPosition } from '@/lib/hooks/useScans';
 import { useDocumentsByPosition } from '@/lib/hooks/useDocuments';
 import { AppleCharacter, OrangeCharacter, PearCharacter, LemonCharacter, GrapesCharacter } from '@/components/ui/FruitCharacters';
 import { format } from 'date-fns';
@@ -43,8 +45,10 @@ export default function PositionDetailPage({ params }: PositionDetailPageProps) 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+  const [scansExpanded, setScansExpanded] = useState(true);
   
   const { data: documents } = useDocumentsByPosition(code);
+  const { totalCount: scanCount } = useScansByPosition(code);
 
   const handleToggleSelection = (photo: Photo) => {
     const newSelection = new Set(selectedPhotos);
@@ -387,6 +391,33 @@ export default function PositionDetailPage({ params }: PositionDetailPageProps) 
               showCheckbox={selectionMode}
             />
           ))}
+        </div>
+
+        {/* Scans Sektion */}
+        <div className="mt-10">
+          <button
+            onClick={() => setScansExpanded(!scansExpanded)}
+            className="mb-4 flex items-center gap-2 text-left"
+          >
+            <Barcode className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-bold text-on-surface">
+              EAN-Scans
+              {scanCount > 0 && (
+                <span className="ml-2 text-base font-normal text-on-surface-variant">
+                  ({scanCount})
+                </span>
+              )}
+            </h2>
+            {scansExpanded ? (
+              <ChevronUp className="h-5 w-5 text-on-surface-variant" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-on-surface-variant" />
+            )}
+          </button>
+
+          {scansExpanded && (
+            <PositionScansList positionCode={code} />
+          )}
         </div>
 
         {/* Dokumente Sektion */}

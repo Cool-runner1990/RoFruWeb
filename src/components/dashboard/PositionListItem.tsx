@@ -4,7 +4,7 @@ import { Position, POSITION_CATEGORIES } from '@/types';
 import Badge from '@/components/ui/Badge';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Barcode } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SadAppleCharacter } from '@/components/ui/FruitCharacters';
@@ -47,6 +47,12 @@ export default function PositionListItem({ position, onClick }: PositionListItem
           <Badge variant="default" className="text-xs">
             {position.photo_count}
           </Badge>
+          {position.scan_count > 0 && (
+            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+              <Barcode className="h-3 w-3" />
+              {position.scan_count}
+            </Badge>
+          )}
           {position.category && (
             <Badge 
               variant="default"

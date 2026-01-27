@@ -7,6 +7,7 @@ import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SadAppleCharacter } from '@/components/ui/FruitCharacters';
+import { Barcode } from 'lucide-react';
 
 interface PositionFeedCardProps {
   position: Position;
@@ -83,11 +84,17 @@ export default function PositionFeedCard({ position, onClick }: PositionFeedCard
           )}
         </div>
 
-        {/* Badge - innerhalb des Bildbereichs */}
-        <div className="absolute right-3 top-3">
+        {/* Badges - innerhalb des Bildbereichs */}
+        <div className="absolute right-3 top-3 flex flex-col gap-1.5 items-end">
           <Badge variant="default">
             {position.photo_count} {position.photo_count === 1 ? 'Foto' : 'Fotos'}
           </Badge>
+          {position.scan_count > 0 && (
+            <Badge variant="default" className="flex items-center gap-1">
+              <Barcode className="h-3 w-3" />
+              {position.scan_count} {position.scan_count === 1 ? 'Scan' : 'Scans'}
+            </Badge>
+          )}
         </div>
       </div>
 

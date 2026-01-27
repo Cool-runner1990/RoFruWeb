@@ -6,6 +6,7 @@
 -- Scans table for warehouse receipt documentation
 CREATE TABLE IF NOT EXISTS scans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    position_code VARCHAR(10),                                  -- 6-digit position code from mobile app
     device_id TEXT NOT NULL,                                    -- Device identifier from mobile app
     device_name TEXT,                                           -- Optional friendly device name
     gtin VARCHAR(20) NOT NULL,                                  -- Scanned barcode (EAN/GTIN)
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS scans (
 );
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_scans_position_code ON scans(position_code);
 CREATE INDEX IF NOT EXISTS idx_scans_gtin ON scans(gtin);
 CREATE INDEX IF NOT EXISTS idx_scans_scanned_at ON scans(scanned_at DESC);
 CREATE INDEX IF NOT EXISTS idx_scans_device_id ON scans(device_id);

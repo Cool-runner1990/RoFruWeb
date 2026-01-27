@@ -27,6 +27,7 @@ export const PROBLEM_TYPES: { value: ProblemType; label: string }[] = [
 
 export interface Scan {
   id: string;
+  position_code: string | null; // 6-digit position code from mobile app
   device_id: string;
   device_name: string | null;
   gtin: string;

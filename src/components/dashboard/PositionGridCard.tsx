@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { SadAppleCharacter } from '@/components/ui/FruitCharacters';
+import { Barcode } from 'lucide-react';
 
 interface PositionGridCardProps {
   position: Position;
@@ -34,10 +35,16 @@ export default function PositionGridCard({ position, onClick }: PositionGridCard
             </span>
           </div>
         )}
-        <div className="absolute right-2 top-2">
+        <div className="absolute right-2 top-2 flex flex-col gap-1 items-end">
           <Badge variant="default" className="text-xs">
-            {position.photo_count}
+            {position.photo_count} {position.photo_count === 1 ? 'Foto' : 'Fotos'}
           </Badge>
+          {position.scan_count > 0 && (
+            <Badge variant="default" className="text-xs flex items-center gap-1">
+              <Barcode className="h-3 w-3" />
+              {position.scan_count}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -59,7 +66,7 @@ export default function PositionGridCard({ position, onClick }: PositionGridCard
           )}
         </div>
         {position.category === 'reklamation' && (
-          <div className="mt-2 flex justify-end">
+          <div className="mt-1 flex justify-end">
             <SadAppleCharacter size={48} />
           </div>
         )}

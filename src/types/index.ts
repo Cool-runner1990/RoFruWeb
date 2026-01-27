@@ -29,6 +29,7 @@ export interface Position {
   photos: Photo[];
   first_photo_url?: string;
   photo_count: number;
+  scan_count: number;
   latest_captured_at: string;
   category?: PositionCategory;
 }
